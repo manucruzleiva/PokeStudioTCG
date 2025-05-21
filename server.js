@@ -1,41 +1,33 @@
-const express = require("express");
-const fs = require("fs");
-const axios = require("axios");
-const path = require("path");
-
+const express = require('express');
+const fetch = require('node-fetch');
+const path = require('path');
 const app = express();
-const port = 3000;
 
-app.use(express.json());
-app.use(express.static("public"));
+const POKEMONTCG_API_KEY = 'f05f0a9f-e3db-4a8b-9ffa-446054f3410b';
 
-app.post("/update", (req, res) => {
-  const { tipo, contenido } = req.body;
-  const ruta = path.join(__dirname, "obs", `${tipo}.txt`);
-  fs.writeFileSync(ruta, contenido);
-  res.sendStatus(200);
-});
+app.use(express.static('public'));
 
-app.get("/buscar-carta", async (req, res) => {
-  const nombre = req.query.nombre;
+app.get('/api/cardsearch', async (req, res) => {
   try {
-    const resp = await axios.get(`https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(nombre)}"`, {
-      headers: { 'X-Api-Key': 'f05f0a9f-e3db-4a8b-9ffa-446054f3410b' }
+    const query = req.query.q;
+    if (!query) return res.status(400).json({ error: 'Missing query' });
+
+    const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}`;
+    const response = await fetch(url, {
+      headers: { 'X-Api-Key': POKEMONTCG_API_KEY }
     });
-    const img = resp.data?.data?.[0]?.images?.large;
-    if (img) {
-      const carta = await axios.get(img, { responseType: "arraybuffer" });
-      fs.writeFileSync(path.join(__dirname, "obs", "carta.jpg"), carta.data);
-      res.sendStatus(200);
-    } else {
-      res.sendStatus(404);
-    }
+    const data = await response.json();
+    res.json(data);
   } catch (e) {
-    console.error(e);
-    res.sendStatus(500);
+    res.status(500).json({ error: 'Error connecting to pokemontcg.io' });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor corriendo en http://localhost:${port}`);
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log('Servidor iniciado en puerto', PORT);
 });

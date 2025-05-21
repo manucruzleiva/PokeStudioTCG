@@ -1,4 +1,3 @@
-// Variables de estado
 let playerA = {
   name: "Jugador A",
   standing: "0/0/0",
@@ -23,16 +22,14 @@ let playerB = {
   turnCount: 0
 };
 
-let currentPlayer = "A"; // 'A' o 'B'
+let currentPlayer = "A";
 let matchTurnCount = 0;
-let finalTurn = false; // false o número del turno final
+let finalTurn = false;
 let matchActive = false;
 
-let matchTime = 50 * 60; // 50 minutos en segundos
+let matchTime = 50 * 60;
 let timer = null;
 let timerRunning = false;
-
-// ======== Funciones Temporizador ========
 
 function updateTimerDisplay() {
   const minutes = Math.floor(matchTime / 60);
@@ -76,42 +73,45 @@ function resetTimer() {
   document.getElementById('finalTurnDisplay').textContent = "FALSO";
 }
 
-// Añadir o quitar tiempo (segundos)
 function addTime(seconds) {
   matchTime = Math.max(0, matchTime + seconds);
   updateTimerDisplay();
 }
 
-// ======== Funciones UI ========
-
 function renderPrizes(playerId) {
   const container = document.getElementById(playerId === 'A' ? 'playerAPrizes' : 'playerBPrizes');
   container.innerHTML = "";
-  // Premios como checkboxes en 3 columnas x 2 filas
+  const player = playerId === "A" ? playerA : playerB;
   for (let i = 0; i < 6; i++) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.className = "prize-checkbox";
-    checkbox.checked = (playerId === "A" ? playerA.prizesLeft : playerB.prizesLeft) <= (5 - i);
-    checkbox.disabled = true; // solo visual
+    // Checked si el premio YA fue tomado (es decir, los 6 - prizesLeft primeros)
+    checkbox.checked = i >= (6 - player.prizesLeft) ? false : true;
+    checkbox.dataset.index = i;
+    checkbox.addEventListener("change", function () {
+      // El usuario marca como tomados de izquierda a derecha los premios
+      // prizesLeft = 6 - la cantidad de checkboxes marcados como tomados
+      const allChecks = container.querySelectorAll("input[type=checkbox]");
+      let prizesTaken = 0;
+      allChecks.forEach((chk, idx) => {
+        if (chk.checked) prizesTaken++;
+      });
+      player.prizesLeft = 6 - prizesTaken;
+      updateUI();
+    });
     container.appendChild(checkbox);
   }
 }
 
 function updateUI() {
-  // Nombres
   document.getElementById('playerAName').value = playerA.name;
   document.getElementById('playerBName').value = playerB.name;
-
-  // Standings
   document.getElementById('playerAStanding').value = playerA.standing;
   document.getElementById('playerBStanding').value = playerB.standing;
-
-  // Wins
   document.getElementById('playerAWins').textContent = playerA.wins;
   document.getElementById('playerBWins').textContent = playerB.wins;
 
-  // Recursos usados (checkboxes)
   document.getElementById('playerASupporter').checked = playerA.supporterUsed;
   document.getElementById('playerAStadium').checked = playerA.stadiumUsed;
   document.getElementById('playerAEnergy').checked = playerA.energyUsed;
@@ -122,15 +122,12 @@ function updateUI() {
   document.getElementById('playerBEnergy').checked = playerB.energyUsed;
   document.getElementById('playerBRetreat').checked = playerB.retreatUsed;
 
-  // Match info
   document.getElementById('matchTurnCount').textContent = matchTurnCount;
   document.getElementById('playerATurnCount').textContent = playerA.turnCount;
   document.getElementById('playerBTurnCount').textContent = playerB.turnCount;
 
-  // Final turn display
   document.getElementById('finalTurnDisplay').textContent = finalTurn === false ? "FALSO" : finalTurn;
 
-  // Resaltar jugador con turno activo
   const playerADiv = document.getElementById('playerA');
   const playerBDiv = document.getElementById('playerB');
   if (currentPlayer === 'A') {
@@ -141,21 +138,57 @@ function updateUI() {
     playerADiv.classList.remove('active-turn');
   }
 
-  // Texto y botón fin de turno
   document.getElementById('currentPlayerTurn').textContent = currentPlayer === 'A' ? "Jugador A" : "Jugador B";
   document.getElementById('endTurnBtn').textContent = `Fin de turno Jugador ${currentPlayer}`;
-
-  // Premios
   renderPrizes('A');
   renderPrizes('B');
 }
 
-// ======== Manejo de eventos y lógica de juego ========
+function updateMatchControlsUI() {
+  const radios = document.getElementsByName('firstTurn');
+  const confirmBtn = document.getElementById('confirmFirstTurnBtn');
+  const endTurnBtn = document.getElementById('endTurnBtn');
+  const endMatchBtn = document.getElementById('endMatchBtn');
+  const winnerOptions = document.getElementById('winnerOptions');
+  const firstTurnBlock = document.getElementById('mc-firstturn');
+  const turnLoopBlock = document.getElementById('mc-turnloop');
+  const endMatchBlock = document.getElementById('mc-endmatch');
+  const winnerVisible = winnerOptions.style.display === "block";
 
-function startMatch() {
-  if (matchActive) return alert("La partida ya está activa.");
-  document.getElementById('startMatchBtn').disabled = true;
-  document.getElementById('firstTurnSelector').style.display = "block";
+  if (!matchActive && !winnerVisible) {
+    radios.forEach(r => r.disabled = false);
+    confirmBtn.disabled = false;
+    firstTurnBlock.style.opacity = '1';
+    firstTurnBlock.style.pointerEvents = '';
+    endTurnBtn.disabled = true;
+    endMatchBtn.disabled = true;
+    turnLoopBlock.style.opacity = '0.6';
+    turnLoopBlock.style.pointerEvents = 'none';
+    endMatchBlock.style.opacity = '0.6';
+    endMatchBlock.style.pointerEvents = 'none';
+  } else if (winnerVisible) {
+    radios.forEach(r => r.disabled = true);
+    confirmBtn.disabled = true;
+    firstTurnBlock.style.opacity = '0.6';
+    firstTurnBlock.style.pointerEvents = 'none';
+    endTurnBtn.disabled = true;
+    endMatchBtn.disabled = false;
+    turnLoopBlock.style.opacity = '0.6';
+    turnLoopBlock.style.pointerEvents = 'none';
+    endMatchBlock.style.opacity = '1';
+    endMatchBlock.style.pointerEvents = '';
+  } else {
+    radios.forEach(r => r.disabled = true);
+    confirmBtn.disabled = true;
+    firstTurnBlock.style.opacity = '0.6';
+    firstTurnBlock.style.pointerEvents = 'none';
+    endTurnBtn.disabled = false;
+    endMatchBtn.disabled = false;
+    turnLoopBlock.style.opacity = '1';
+    turnLoopBlock.style.pointerEvents = '';
+    endMatchBlock.style.opacity = '1';
+    endMatchBlock.style.pointerEvents = '';
+  }
 }
 
 function confirmFirstTurn() {
@@ -167,26 +200,33 @@ function confirmFirstTurn() {
   if (!selected) return alert("Selecciona quién empieza.");
   currentPlayer = selected;
   matchActive = true;
-  document.getElementById('firstTurnSelector').style.display = "none";
-  document.getElementById('endMatchBtn').disabled = false;
   updateUI();
+  updateMatchControlsUI();
   startTimer();
 }
 
 function endMatch() {
-  pauseTimer();
-  matchActive = false;
-  document.getElementById('startMatchBtn').disabled = false;
-  document.getElementById('endMatchBtn').disabled = true;
-  document.getElementById('match-winner-section').style.display = "block";
+  document.getElementById('winnerOptions').style.display = "block";
+  updateMatchControlsUI();
+}
+
+function confirmMatchWinner() {
+  const radios = document.getElementsByName('matchWinner');
+  let selected = null;
+  for (const r of radios) {
+    if (r.checked) selected = r.value;
+  }
+  if (!selected) return alert("Selecciona el jugador ganador.");
+  declareWinner(selected);
 }
 
 function declareWinner(player) {
   if (player === 'A') playerA.wins++;
   else if (player === 'B') playerB.wins++;
-  document.getElementById('match-winner-section').style.display = "none";
+  document.getElementById('winnerOptions').style.display = "none";
   resetMatch();
   updateUI();
+  updateMatchControlsUI();
 }
 
 function resetMatch() {
@@ -204,19 +244,20 @@ function resetMatch() {
   playerB.turnCount = 0;
   matchTurnCount = 0;
   finalTurn = false;
+  matchActive = false;
   matchTime = 50 * 60;
   updateTimerDisplay();
   pauseTimer();
+  const radios = document.getElementsByName('firstTurn');
+  radios.forEach(r => r.checked = false);
+  const winnerRadios = document.getElementsByName('matchWinner');
+  winnerRadios.forEach(r => r.checked = false);
   document.getElementById('startPauseBtn').textContent = "▶️";
-  document.getElementById('startMatchBtn').disabled = false;
-  document.getElementById('endMatchBtn').disabled = true;
 }
 
 function endTurn() {
   if (!matchActive) return alert("La partida no está activa.");
-  
   matchTurnCount++;
-
   if (currentPlayer === "A") {
     playerA.turnCount++;
     playerA.supporterUsed = false;
@@ -232,7 +273,6 @@ function endTurn() {
     playerB.retreatUsed = false;
     currentPlayer = "A";
   }
-
   if (finalTurn !== false) {
     if (matchTurnCount >= finalTurn + 3) {
       alert("¡La partida ha terminado por límite de turno final!");
@@ -240,11 +280,9 @@ function endTurn() {
       return;
     }
   }
-
   updateUI();
 }
 
-// Escuchar cambios de recursos usados para actualizar estado
 document.getElementById('playerASupporter').addEventListener('change', e => {
   playerA.supporterUsed = e.target.checked;
 });
@@ -271,14 +309,12 @@ document.getElementById('playerBRetreat').addEventListener('change', e => {
   playerB.retreatUsed = e.target.checked;
 });
 
-// Actualizar nombres y standings cuando se modifican
 document.getElementById('playerAName').addEventListener('input', e => {
   playerA.name = e.target.value;
 });
 document.getElementById('playerBName').addEventListener('input', e => {
   playerB.name = e.target.value;
 });
-
 document.getElementById('playerAStanding').addEventListener('input', e => {
   playerA.standing = e.target.value;
 });
@@ -286,6 +322,72 @@ document.getElementById('playerBStanding').addEventListener('input', e => {
   playerB.standing = e.target.value;
 });
 
-// Inicializar UI y temporizador
 updateTimerDisplay();
 updateUI();
+updateMatchControlsUI();
+
+// --- BUSCADOR DE CARTAS SIN BACKEND ---
+async function searchCard(e) {
+  e.preventDefault();
+  const query = document.getElementById('cardSearchInput').value.trim();
+  if (!query) return;
+
+  const $results = document.getElementById('cardSearchResults');
+  const $selected = document.getElementById('selectedCardImage');
+  $results.innerHTML = "Buscando...";
+  $selected.innerHTML = "";
+
+  try {
+    // Usar la API pública de pokemontcg.io
+    const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(query)} OR text:${encodeURIComponent(query)}`);
+    if (!res.ok) {
+      $results.innerHTML = "Error al buscar cartas en la API pública.";
+      return;
+    }
+    const data = await res.json();
+
+    if (!data.data || data.data.length === 0) {
+      $results.innerHTML = "<em>No se encontraron cartas que coincidan con la búsqueda.</em>";
+      return;
+    }
+
+    $results.innerHTML = "";
+    data.data.slice(0, 12).forEach(card => {
+      const cardDiv = document.createElement('div');
+      cardDiv.className = "card-result";
+      cardDiv.innerHTML = `
+        <img src="${card.images.small}" alt="${card.name}">
+        <div>${card.name}</div>
+        <div style="font-size:0.9em;color:#888;">${card.set && card.set.name ? card.set.name : ""}</div>
+      `;
+      cardDiv.onclick = () => selectCard(card, cardDiv);
+      $results.appendChild(cardDiv);
+    });
+  } catch (err) {
+    $results.innerHTML = "Error de red al buscar cartas. Intenta de nuevo o revisa tu conexión.";
+  }
+}
+
+function selectCard(card, cardDiv) {
+  document.querySelectorAll('.card-result.selected').forEach(el => el.classList.remove('selected'));
+  cardDiv.classList.add('selected');
+  const $selected = document.getElementById('selectedCardImage');
+  $selected.innerHTML = `
+    <h3>${card.name}</h3>
+    <img src="${card.images.large}" alt="${card.name}">
+    <div style="margin-top:8px;font-size:1.02em;">${card.set && card.set.name ? card.set.name : ""}</div>
+  `;
+}
+
+// Event listeners de botones importantes
+document.getElementById('startPauseBtn').addEventListener('click', toggleTimer);
+document.getElementById('resetTimerBtn').addEventListener('click', resetTimer);
+document.getElementById('addTimeBtn').addEventListener('click', () => addTime(60)); // 1 minuto extra
+
+document.getElementById('confirmFirstTurnBtn').addEventListener('click', confirmFirstTurn);
+document.getElementById('endTurnBtn').addEventListener('click', endTurn);
+document.getElementById('endMatchBtn').addEventListener('click', endMatch);
+document.getElementById('confirmWinnerBtn').addEventListener('click', confirmMatchWinner);
+
+// Card search form
+document.getElementById('cardSearchForm').addEventListener('submit', searchCard);

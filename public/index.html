@@ -1,114 +1,148 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PokeStudioTCG</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Control de Partida Pokémon TCG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <section id="match-info" class="section">
-    <h2>Información de la Partida</h2>
-    <div class="match-data">
+  <div class="section info-timer-container">
+    <div id="match-info" class="section">
+      <h2>Información de partida</h2>
       <div>
-        <strong>Turno partida:</strong> <span id="matchTurnCount">0</span>
+        <label>Jugador A: <input type="text" id="playerAName"></label>
       </div>
       <div>
-        <strong>Turno Jugador A:</strong> <span id="playerATurnCount">0</span>
+        <label>Standing A: <input type="text" id="playerAStanding"></label>
       </div>
       <div>
-        <strong>Turno Jugador B:</strong> <span id="playerBTurnCount">0</span>
+        <label>Victorias A: <span id="playerAWins">0</span></label>
+      </div>
+      <hr>
+      <div>
+        <label>Jugador B: <input type="text" id="playerBName"></label>
       </div>
       <div>
-        <strong>Turno final:</strong> <span id="finalTurnDisplay">FALSO</span>
+        <label>Standing B: <input type="text" id="playerBStanding"></label>
+      </div>
+      <div>
+        <label>Victorias B: <span id="playerBWins">0</span></label>
       </div>
     </div>
-  </section>
-
-  <section id="timer-section" class="section">
-    <h2>Temporizador</h2>
-    <div id="timer">50:00</div>
-    <div class="timer-buttons">
-      <button id="startPauseBtn" onclick="toggleTimer()">▶️</button>
-      <button onclick="resetTimer()">🛑</button>
-      <button onclick="addTime(60)">+1 min</button>
-      <button onclick="addTime(-60)">-1 min</button>
+    <div id="timer-section" class="section">
+      <h2>Reloj</h2>
+      <div id="timer">50:00</div>
+      <div class="timer-buttons">
+        <button id="startPauseBtn">▶️</button>
+        <button id="resetTimerBtn">⏹️</button>
+        <button id="addTimeBtn">+1 min</button>
+      </div>
+      <div style="margin-top:12px;">
+        <strong>Turno Final:</strong> <span id="finalTurnDisplay">FALSO</span>
+      </div>
     </div>
-  </section>
+    <div id="match-controls-wrapper" class="section">
+      <h2>Control de Partida</h2>
+      <div class="match-controls">
 
-  <section id="players-section" class="section players-container">
-    <!-- Jugador A -->
-    <div id="playerA" class="player-block">
+        <div class="mc-flexrow">
+          <!-- Primer subbloque: Selección de quién empieza -->
+          <div class="mc-subblock" id="mc-firstturn">
+            <div><strong>¿Quién empieza?</strong></div>
+            <div>
+              <label><input type="radio" name="firstTurn" value="A"> Jugador A</label>
+              <label><input type="radio" name="firstTurn" value="B"> Jugador B</label>
+            </div>
+            <button id="confirmFirstTurnBtn">Confirmar</button>
+          </div>
+
+          <!-- Segundo subbloque: Control de turnos -->
+          <div class="mc-subblock" id="mc-turnloop">
+            <div>
+              <strong>Turno Actual:</strong> <span id="matchTurnCount">0</span>
+            </div>
+            <div>
+              <strong>Turnos A:</strong> <span id="playerATurnCount">0</span>
+            </div>
+            <div>
+              <strong>Turnos B:</strong> <span id="playerBTurnCount">0</span>
+            </div>
+            <div>
+              <strong>Turno de:</strong> <span id="currentPlayerTurn">Jugador A</span>
+            </div>
+            <button id="endTurnBtn">Fin de turno Jugador A</button>
+          </div>
+
+          <!-- Tercer subbloque: Fin de partida -->
+          <div class="mc-subblock" id="mc-endmatch">
+            <div><strong>Fin de partida</strong></div>
+            <button id="endMatchBtn">Finalizar Partida</button>
+            <div id="winnerOptions" style="display:none;margin-top:12px;">
+              <div><strong>¿Quién ganó?</strong></div>
+              <label><input type="radio" name="matchWinner" value="A"> Jugador A</label>
+              <label><input type="radio" name="matchWinner" value="B"> Jugador B</label>
+              <br>
+              <button id="confirmWinnerBtn">Confirmar ganador</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="section players-container">
+    <div class="player-block" id="playerA">
       <div class="player-info">
-        <input type="text" id="playerAName" value="Jugador A" class="player-name" />
-        <div><strong>Standing:</strong> <input id="playerAStanding" type="text" value="0/0/0" /></div>
-        <div><strong>Partidas ganadas:</strong> <span id="playerAWins">0</span></div>
+        <div><strong>Jugador A</strong></div>
+        <div>Victorias: <span id="playerAWins">0</span></div>
       </div>
       <div class="player-match-data">
         <div class="prizes">
-          <strong>Premios</strong>
-          <div class="prizes-grid" id="playerAPrizes">
-            <!-- Checkboxes se generarán en script -->
-          </div>
+          <strong>Premios:</strong>
+          <div class="prizes-grid" id="playerAPrizes"></div>
         </div>
         <div class="resources">
-          <strong>Recursos usados</strong>
-          <label><input type="checkbox" id="playerASupporter" /> Partidario</label>
-          <label><input type="checkbox" id="playerAStadium" /> Estadio</label>
-          <label><input type="checkbox" id="playerAEnergy" /> Energía</label>
-          <label><input type="checkbox" id="playerARetreat" /> Retirada</label>
+          <label><input type="checkbox" id="playerASupporter"> Partidario usado</label>
+          <label><input type="checkbox" id="playerAStadium"> Estadio usado</label>
+          <label><input type="checkbox" id="playerAEnergy"> Energía usada</label>
+          <label><input type="checkbox" id="playerARetreat"> Retirada usada</label>
         </div>
       </div>
     </div>
-
-    <!-- Jugador B -->
-    <div id="playerB" class="player-block">
+    <div class="player-block" id="playerB">
       <div class="player-info">
-        <input type="text" id="playerBName" value="Jugador B" class="player-name" />
-        <div><strong>Standing:</strong> <input id="playerBStanding" type="text" value="0/0/0" /></div>
-        <div><strong>Partidas ganadas:</strong> <span id="playerBWins">0</span></div>
+        <div><strong>Jugador B</strong></div>
+        <div>Victorias: <span id="playerBWins">0</span></div>
       </div>
       <div class="player-match-data">
         <div class="prizes">
-          <strong>Premios</strong>
-          <div class="prizes-grid" id="playerBPrizes">
-            <!-- Checkboxes se generarán en script -->
-          </div>
+          <strong>Premios:</strong>
+          <div class="prizes-grid" id="playerBPrizes"></div>
         </div>
         <div class="resources">
-          <strong>Recursos usados</strong>
-          <label><input type="checkbox" id="playerBSupporter" /> Partidario</label>
-          <label><input type="checkbox" id="playerBStadium" /> Estadio</label>
-          <label><input type="checkbox" id="playerBEnergy" /> Energía</label>
-          <label><input type="checkbox" id="playerBRetreat" /> Retirada</label>
+          <label><input type="checkbox" id="playerBSupporter"> Partidario usado</label>
+          <label><input type="checkbox" id="playerBStadium"> Estadio usado</label>
+          <label><input type="checkbox" id="playerBEnergy"> Energía usada</label>
+          <label><input type="checkbox" id="playerBRetreat"> Retirada usada</label>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section id="turn-section" class="section turn-switcher">
-    <div>
-      <strong>Turno de:</strong> <span id="currentPlayerTurn">Jugador A</span>
+  <div class="card-search-section section">
+    <div class="card-search-left">
+      <form id="cardSearchForm">
+        <input type="text" id="cardSearchInput" placeholder="Buscar carta Pokémon o texto...">
+        <button type="submit">Buscar</button>
+      </form>
+      <div id="cardSearchResults"></div>
     </div>
-    <button id="endTurnBtn" onclick="endTurn()">Fin de turno Jugador A</button>
-  </section>
-
-  <section class="section control-buttons">
-    <div id="firstTurnSelector">
-      <strong>Seleccionar primer turno:</strong><br />
-      <label><input type="radio" name="firstTurn" value="A" /> Jugador A</label>
-      <label><input type="radio" name="firstTurn" value="B" /> Jugador B</label>
-      <button id="confirmFirstTurnBtn" onclick="confirmFirstTurn()">Confirmar</button>
+    <div class="card-search-right">
+      <div id="selectedCardImage"></div>
     </div>
-    <button id="startMatchBtn" onclick="startMatch()">Iniciar partida</button>
-    <button id="endMatchBtn" onclick="endMatch()" disabled>Terminar partida</button>
-  </section>
-
-  <section id="match-winner-section" class="section" style="display:none;">
-    <strong>Selecciona el ganador:</strong><br />
-    <button onclick="declareWinner('A')">Jugador A</button>
-    <button onclick="declareWinner('B')">Jugador B</button>
-  </section>
+  </div>
 
   <script src="script.js"></script>
 </body>
