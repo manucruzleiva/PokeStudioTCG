@@ -1,11 +1,17 @@
 const express = require('express');
 const fetch = require('node-fetch');
+const WebSocket = require('ws');
 const path = require('path');
 const app = express();
+const server = require('http').createServer(app);
+const wss = new WebSocket.Server({ server });
 
 const POKEMONTCG_API_KEY = 'f05f0a9f-e3db-4a8b-9ffa-446054f3410b';
 
-app.use(express.static('public'));
+// Configurar middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/obs', express.static(path.join(__dirname, 'obs')));
 
 app.get('/api/cardsearch', async (req, res) => {
   try {
@@ -23,11 +29,35 @@ app.get('/api/cardsearch', async (req, res) => {
   }
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Rutas
+app.get('/overlay', function(req, res) {
+    res.sendFile(path.join(__dirname, 'obs', 'overlay.html'));
+});
+
+app.get('/', function(req, res) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// WebSocket connection handling
+wss.on('connection', (ws) => {
+    console.log('Nuevo cliente WebSocket conectado');
+      ws.on('message', (message) => {
+        console.log('Mensaje recibido:', message.toString());
+        // Broadcast to all connected clients
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message.toString());
+            }
+        });
+    });
+
+    ws.on('close', () => {
+        console.log('Cliente WebSocket desconectado');
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log('Servidor iniciado en puerto', PORT);
+server.listen(PORT, () => {
+    console.log('Servidor iniciado en puerto', PORT);
+    console.log('Overlay disponible en http://localhost:' + PORT + '/overlay');
 });

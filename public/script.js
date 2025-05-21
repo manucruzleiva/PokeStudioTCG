@@ -39,14 +39,13 @@ function updateTimerDisplay() {
 
 function startTimer() {
   if (timer) clearInterval(timer);
-  timer = setInterval(() => {
-    if (matchTime > 0) {
+  timer = setInterval(() => {    if (matchTime > 0) {
       matchTime--;
       updateTimerDisplay();
     } else if (finalTurn === false) {
-      finalTurn = 0;
+      finalTurn = Math.min(matchTurnCount, matchTurnCount + 3);
       document.getElementById('finalTurnDisplay').textContent = finalTurn;
-      alert("¡Tiempo terminado! Comienza el turno final.");
+      alert("¡Tiempo terminado! Máximo " + (finalTurn === matchTurnCount ? "este" : "3") + " turnos más.");
     }
   }, 1000);
   timerRunning = true;
@@ -91,14 +90,19 @@ function renderPrizes(playerId) {
     checkbox.dataset.index = i;
     checkbox.addEventListener("change", function () {
       // El usuario marca como tomados de izquierda a derecha los premios
-      // prizesLeft = 6 - la cantidad de checkboxes marcados como tomados
-      const allChecks = container.querySelectorAll("input[type=checkbox]");
+      // prizesLeft = 6 - la cantidad de checkboxes marcados como tomados      const allChecks = container.querySelectorAll("input[type=checkbox]");
       let prizesTaken = 0;
       allChecks.forEach((chk, idx) => {
         if (chk.checked) prizesTaken++;
       });
       player.prizesLeft = 6 - prizesTaken;
       updateUI();
+      
+      // Si se tomaron los 6 premios, terminar la partida
+      if (prizesTaken === 6) {
+        alert(`¡${player.name} ha ganado la partida por premios!`);
+        declareWinner(playerId);
+      }
     });
     container.appendChild(checkbox);
   }
@@ -111,6 +115,14 @@ function updateUI() {
   document.getElementById('playerBStanding').value = playerB.standing;
   document.getElementById('playerAWins').textContent = playerA.wins;
   document.getElementById('playerBWins').textContent = playerB.wins;
+
+  // Actualizar nombres en todos los spans
+  document.querySelectorAll('.playerAName').forEach(span => {
+    span.textContent = playerA.name;
+  });
+  document.querySelectorAll('.playerBName').forEach(span => {
+    span.textContent = playerB.name;
+  });
 
   document.getElementById('playerASupporter').checked = playerA.supporterUsed;
   document.getElementById('playerAStadium').checked = playerA.stadiumUsed;
@@ -137,11 +149,11 @@ function updateUI() {
     playerBDiv.classList.add('active-turn');
     playerADiv.classList.remove('active-turn');
   }
-
-  document.getElementById('currentPlayerTurn').textContent = currentPlayer === 'A' ? "Jugador A" : "Jugador B";
-  document.getElementById('endTurnBtn').textContent = `Fin de turno Jugador ${currentPlayer}`;
+  document.getElementById('currentPlayerTurn').textContent = currentPlayer === 'A' ? playerA.name : playerB.name;
+  document.getElementById('endTurnBtn').textContent = `Fin de turno ${currentPlayer === 'A' ? playerA.name : playerB.name}`;
   renderPrizes('A');
   renderPrizes('B');
+  updateOBS();
 }
 
 function updateMatchControlsUI() {
@@ -270,15 +282,12 @@ function endTurn() {
     playerB.supporterUsed = false;
     playerB.stadiumUsed = false;
     playerB.energyUsed = false;
-    playerB.retreatUsed = false;
-    currentPlayer = "A";
+    playerB.retreatUsed = false;  currentPlayer = "A";
   }
-  if (finalTurn !== false) {
-    if (matchTurnCount >= finalTurn + 3) {
-      alert("¡La partida ha terminado por límite de turno final!");
-      endMatch();
-      return;
-    }
+  if (finalTurn !== false && matchTurnCount >= finalTurn + 3) {
+    alert("¡La partida ha terminado por límite de turno final!");
+    endMatch();
+    return;
   }
   updateUI();
 }
@@ -379,15 +388,78 @@ function selectCard(card, cardDiv) {
   `;
 }
 
+// Función para enviar actualización a OBS
+let obsSocket;
+
+function connectOBS() {
+    obsSocket = new WebSocket('ws://' + window.location.hostname + ':3000');
+    obsSocket.onopen = () => {
+        console.log('Conectado al servidor OBS');
+        updateOBS(); // Enviar estado inicial
+    };
+    obsSocket.onclose = () => {
+        console.log('Desconectado del servidor OBS, intentando reconectar...');
+        setTimeout(connectOBS, 1000);
+    };
+}
+
+function updateOBS() {
+    if (obsSocket && obsSocket.readyState === WebSocket.OPEN) {
+        const data = {
+            playerA: {
+                name: playerA.name,
+                prizesLeft: playerA.prizesLeft,
+                wins: playerA.wins,
+                standing: playerA.standing
+            },
+            playerB: {
+                name: playerB.name,
+                prizesLeft: playerB.prizesLeft,
+                wins: playerB.wins,
+                standing: playerB.standing
+            },
+            timer: document.getElementById('timer').textContent,
+            matchTurnCount,
+            currentPlayer,
+            finalTurn
+        };
+        obsSocket.send(JSON.stringify(data));
+    }
+}
+
 // Event listeners de botones importantes
 document.getElementById('startPauseBtn').addEventListener('click', toggleTimer);
 document.getElementById('resetTimerBtn').addEventListener('click', resetTimer);
 document.getElementById('addTimeBtn').addEventListener('click', () => addTime(60)); // 1 minuto extra
 
+// Manejo de turno final
+document.getElementById('decreaseFinalTurn').addEventListener('click', () => {
+  if (finalTurn === false) return;
+  finalTurn = Math.max(matchTurnCount, finalTurn - 1);
+  document.getElementById('finalTurnDisplay').textContent = finalTurn;
+});
+
+document.getElementById('increaseFinalTurn').addEventListener('click', () => {
+  if (finalTurn === false) {
+    finalTurn = matchTurnCount;
+  } else if (finalTurn < matchTurnCount + 3) {
+    finalTurn++;
+  }
+  document.getElementById('finalTurnDisplay').textContent = finalTurn;
+});
+
+document.getElementById('resetFinalTurn').addEventListener('click', () => {
+  finalTurn = false;
+  document.getElementById('finalTurnDisplay').textContent = "FALSO";
+});
+
 document.getElementById('confirmFirstTurnBtn').addEventListener('click', confirmFirstTurn);
 document.getElementById('endTurnBtn').addEventListener('click', endTurn);
 document.getElementById('endMatchBtn').addEventListener('click', endMatch);
 document.getElementById('confirmWinnerBtn').addEventListener('click', confirmMatchWinner);
+
+// Iniciar conexión WebSocket para OBS
+connectOBS();
 
 // Card search form
 document.getElementById('cardSearchForm').addEventListener('submit', searchCard);

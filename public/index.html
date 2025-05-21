@@ -37,9 +37,13 @@
         <button id="startPauseBtn">▶️</button>
         <button id="resetTimerBtn">⏹️</button>
         <button id="addTimeBtn">+1 min</button>
-      </div>
-      <div style="margin-top:12px;">
+      </div>      <div style="margin-top:12px;">
         <strong>Turno Final:</strong> <span id="finalTurnDisplay">FALSO</span>
+        <div style="margin-top:8px;">
+          <button id="decreaseFinalTurn">-</button>
+          <button id="increaseFinalTurn">+</button>
+          <button id="resetFinalTurn">Reset</button>
+        </div>
       </div>
     </div>
     <div id="match-controls-wrapper" class="section">
@@ -48,11 +52,10 @@
 
         <div class="mc-flexrow">
           <!-- Primer subbloque: Selección de quién empieza -->
-          <div class="mc-subblock" id="mc-firstturn">
-            <div><strong>¿Quién empieza?</strong></div>
+          <div class="mc-subblock" id="mc-firstturn">            <div><strong>¿Quién empieza?</strong></div>
             <div>
-              <label><input type="radio" name="firstTurn" value="A"> Jugador A</label>
-              <label><input type="radio" name="firstTurn" value="B"> Jugador B</label>
+              <label><input type="radio" name="firstTurn" value="A"> <span class="playerAName">Jugador A</span></label>
+              <label><input type="radio" name="firstTurn" value="B"> <span class="playerBName">Jugador B</span></label>
             </div>
             <button id="confirmFirstTurnBtn">Confirmar</button>
           </div>
@@ -78,10 +81,9 @@
           <div class="mc-subblock" id="mc-endmatch">
             <div><strong>Fin de partida</strong></div>
             <button id="endMatchBtn">Finalizar Partida</button>
-            <div id="winnerOptions" style="display:none;margin-top:12px;">
-              <div><strong>¿Quién ganó?</strong></div>
-              <label><input type="radio" name="matchWinner" value="A"> Jugador A</label>
-              <label><input type="radio" name="matchWinner" value="B"> Jugador B</label>
+            <div id="winnerOptions" style="display:none;margin-top:12px;">              <div><strong>¿Quién ganó?</strong></div>
+              <label><input type="radio" name="matchWinner" value="A"> <span class="playerAName">Jugador A</span></label>
+              <label><input type="radio" name="matchWinner" value="B"> <span class="playerBName">Jugador B</span></label>
               <br>
               <button id="confirmWinnerBtn">Confirmar ganador</button>
             </div>
