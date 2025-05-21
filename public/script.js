@@ -346,11 +346,10 @@ async function searchCard(e) {
   $results.innerHTML = "Buscando...";
   $selected.innerHTML = "";
 
-  try {
-    // Usar la API pública de pokemontcg.io
-    const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(query)} OR text:${encodeURIComponent(query)}`);
+  try {    // Usar nuestro endpoint de búsqueda
+    const res = await fetch(`/api/cardsearch?q=${encodeURIComponent(query)}`);
     if (!res.ok) {
-      $results.innerHTML = "Error al buscar cartas en la API pública.";
+      $results.innerHTML = "Error al buscar cartas. Por favor intenta de nuevo.";
       return;
     }
     const data = await res.json();
@@ -392,7 +391,7 @@ function selectCard(card, cardDiv) {
 let obsSocket;
 
 function connectOBS() {
-    obsSocket = new WebSocket('ws://' + window.location.hostname + ':3000');
+    obsSocket = new WebSocket('ws://' + window.location.hostname + ':3001');
     obsSocket.onopen = () => {
         console.log('Conectado al servidor OBS');
         updateOBS(); // Enviar estado inicial

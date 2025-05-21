@@ -2,23 +2,31 @@ const express = require('express');
 const fetch = require('node-fetch');
 const WebSocket = require('ws');
 const path = require('path');
-const app = express();
-const server = require('http').createServer(app);
-const wss = new WebSocket.Server({ server });
+
+// Crear dos aplicaciones Express separadas
+const dashboardApp = express();
+const overlayApp = express();
+
+// Crear dos servidores HTTP
+const dashboardServer = require('http').createServer(dashboardApp);
+const overlayServer = require('http').createServer(overlayApp);
+
+// Configurar WebSocket en el servidor del overlay
+const wss = new WebSocket.Server({ server: overlayServer });
 
 const POKEMONTCG_API_KEY = 'f05f0a9f-e3db-4a8b-9ffa-446054f3410b';
 
-// Configurar middleware
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/obs', express.static(path.join(__dirname, 'obs')));
+// Configurar middleware para el dashboard
+dashboardApp.use(express.json());
+dashboardApp.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/cardsearch', async (req, res) => {
+// Configurar middleware para el overlay
+overlayApp.use(express.static(path.join(__dirname, 'obs')));
+
+dashboardApp.get('/api/cardsearch', async (req, res) => {
   try {
     const query = req.query.q;
-    if (!query) return res.status(400).json({ error: 'Missing query' });
-
-    const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}`;
+    if (!query) return res.status(400).json({ error: 'Missing query' });    const url = `https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(query)}* OR text:${encodeURIComponent(query)}*`;
     const response = await fetch(url, {
       headers: { 'X-Api-Key': POKEMONTCG_API_KEY }
     });
@@ -29,13 +37,14 @@ app.get('/api/cardsearch', async (req, res) => {
   }
 });
 
-// Rutas
-app.get('/overlay', function(req, res) {
-    res.sendFile(path.join(__dirname, 'obs', 'overlay.html'));
+// Rutas del dashboard
+dashboardApp.get('/', function(req, res) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/', function(req, res) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Rutas del overlay
+overlayApp.get('/', function(req, res) {
+    res.sendFile(path.join(__dirname, 'obs', 'overlay.html'));
 });
 
 // WebSocket connection handling
@@ -56,8 +65,16 @@ wss.on('connection', (ws) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log('Servidor iniciado en puerto', PORT);
-    console.log('Overlay disponible en http://localhost:' + PORT + '/overlay');
+const DASHBOARD_PORT = process.env.DASHBOARD_PORT || 3000;
+const OVERLAY_PORT = process.env.OVERLAY_PORT || 3001;
+
+// Iniciar servidor del dashboard
+dashboardServer.listen(DASHBOARD_PORT, () => {
+    console.log('Dashboard disponible en http://localhost:' + DASHBOARD_PORT);
+});
+
+// Iniciar servidor del overlay
+overlayServer.listen(OVERLAY_PORT, () => {
+    console.log('Overlay disponible en http://localhost:' + OVERLAY_PORT);
+    console.log('WebSocket server ejecutándose en puerto', OVERLAY_PORT);
 });
