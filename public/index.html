@@ -37,13 +37,9 @@
         <button id="startPauseBtn">▶️</button>
         <button id="resetTimerBtn">⏹️</button>
         <button id="addTimeBtn">+1 min</button>
-      </div>      <div style="margin-top:12px;">
+      </div>
+      <div style="margin-top:12px;">
         <strong>Turno Final:</strong> <span id="finalTurnDisplay">FALSO</span>
-        <div style="margin-top:8px;">
-          <button id="decreaseFinalTurn">-</button>
-          <button id="increaseFinalTurn">+</button>
-          <button id="resetFinalTurn">Reset</button>
-        </div>
       </div>
     </div>
     <div id="match-controls-wrapper" class="section">
@@ -52,10 +48,11 @@
 
         <div class="mc-flexrow">
           <!-- Primer subbloque: Selección de quién empieza -->
-          <div class="mc-subblock" id="mc-firstturn">            <div><strong>¿Quién empieza?</strong></div>
+          <div class="mc-subblock" id="mc-firstturn">
+            <div><strong>¿Quién empieza?</strong></div>
             <div>
-              <label><input type="radio" name="firstTurn" value="A"> <span class="playerAName">Jugador A</span></label>
-              <label><input type="radio" name="firstTurn" value="B"> <span class="playerBName">Jugador B</span></label>
+              <label><input type="radio" name="firstTurn" value="A"> Jugador A</label>
+              <label><input type="radio" name="firstTurn" value="B"> Jugador B</label>
             </div>
             <button id="confirmFirstTurnBtn">Confirmar</button>
           </div>
@@ -80,10 +77,11 @@
           <!-- Tercer subbloque: Fin de partida -->
           <div class="mc-subblock" id="mc-endmatch">
             <div><strong>Fin de partida</strong></div>
-            <button id="endMatchBtn">Finalizar Partida</button>
-            <div id="winnerOptions" style="display:none;margin-top:12px;">              <div><strong>¿Quién ganó?</strong></div>
-              <label><input type="radio" name="matchWinner" value="A"> <span class="playerAName">Jugador A</span></label>
-              <label><input type="radio" name="matchWinner" value="B"> <span class="playerBName">Jugador B</span></label>
+            <button id="endMatchBtn" data-tooltip="Finaliza la partida">Finalizar Partida</button>
+            <div id="winnerOptions" style="display:none;margin-top:12px;">
+              <div><strong>¿Quién ganó?</strong></div>
+              <label><input type="radio" name="matchWinner" value="A"> Jugador A</label>
+              <label><input type="radio" name="matchWinner" value="B"> Jugador B</label>
               <br>
               <button id="confirmWinnerBtn">Confirmar ganador</button>
             </div>
@@ -101,15 +99,15 @@
         <div>Victorias: <span id="playerAWins">0</span></div>
       </div>
       <div class="player-match-data">
-        <div class="prizes">
-          <strong>Premios:</strong>
-          <div class="prizes-grid" id="playerAPrizes"></div>
-        </div>
         <div class="resources">
           <label><input type="checkbox" id="playerASupporter"> Partidario usado</label>
           <label><input type="checkbox" id="playerAStadium"> Estadio usado</label>
           <label><input type="checkbox" id="playerAEnergy"> Energía usada</label>
           <label><input type="checkbox" id="playerARetreat"> Retirada usada</label>
+        </div>
+        <div class="prizes">
+          <strong>Premios:</strong>
+          <div class="prizes-grid" id="playerAPrizes"></div>
         </div>
       </div>
     </div>
