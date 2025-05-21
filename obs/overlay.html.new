@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-shadow: 2px 2px 2px black;
+            transition: border-color 0.3s;
+        }
+        .match-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+        }
+        .player {
+            text-align: center;
+        }
+        .player-name {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .prizes {
+            font-size: 20px;
+            margin-top: 5px;
+        }
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .turn-info {
+            text-align: center;
+            font-size: 20px;
+            margin-top: 10px;
+        }
+        .active-player {
+            color: #ffeb3b;
+        }
+    </style>
+</head>
+<body>
+    <div class="match-info">
+        <div class="player" id="playerAInfo">
+            <div class="player-name" id="playerAName">Jugador A</div>
+            <div class="prizes">Premios: <span id="playerAPrizes">6</span></div>
+        </div>
+        <div>
+            <div class="timer" id="timer">50:00</div>
+            <div class="turn-info">
+                Turno: <span id="currentTurn">0</span>
+                <div id="currentPlayer"></div>
+            </div>
+        </div>
+        <div class="player" id="playerBInfo">
+            <div class="player-name" id="playerBName">Jugador B</div>
+            <div class="prizes">Premios: <span id="playerBPrizes">6</span></div>
+        </div>
+    </div>
+    <script>
+        let ws;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        const WEBSOCKET_PORT = 3001;
+        const RECONNECT_BASE_DELAY = 1000;
+
+        function updateDisplay(data) {
+            try {
+                document.getElementById('playerAName').textContent = data.playerA.name;
+                document.getElementById('playerBName').textContent = data.playerB.name;
+                document.getElementById('playerAPrizes').textContent = data.playerA.prizesLeft;
+                document.getElementById('playerBPrizes').textContent = data.playerB.prizesLeft;
+                document.getElementById('timer').textContent = data.timer;
+                document.getElementById('currentTurn').textContent = data.matchTurnCount;
+                document.getElementById('currentPlayer').textContent = 
+                    'Turno de ' + (data.currentPlayer === 'A' ? data.playerA.name : data.playerB.name);
+
+                // Highlight active player
+                document.getElementById('playerAInfo').classList.toggle('active-player', data.currentPlayer === 'A');
+                document.getElementById('playerBInfo').classList.toggle('active-player', data.currentPlayer === 'B');
+            } catch (err) {
+                console.error('Error actualizando display:', err);
+            }
+        }
+
+        function connectWebSocket() {
+            try {
+                const wsUrl = `ws://${window.location.hostname}:${WEBSOCKET_PORT}`;
+                console.log('Conectando a WebSocket:', wsUrl);
+                
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('Conectado al WebSocket');
+                    reconnectAttempts = 0;
+                    document.body.style.border = '2px solid green';
+                };
+                
+                ws.onmessage = (event) => {
+                    console.log('Mensaje recibido');
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('Datos:', data);
+                        updateDisplay(data);
+                    } catch (err) {
+                        console.error('Error procesando mensaje:', err);
+                    }
+                };
+
+                ws.onclose = () => {
+                    console.log('Conexión WebSocket cerrada');
+                    document.body.style.border = '2px solid red';
+                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        reconnectAttempts++;
+                        const delay = Math.min(RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttempts), 10000);
+                        console.log(`Reconectando en ${delay}ms (intento ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+                        setTimeout(connectWebSocket, delay);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('Error en WebSocket:', error);
+                    document.body.style.border = '2px solid orange';
+                };
+            } catch (err) {
+                console.error('Error estableciendo conexión:', err);
+                document.body.style.border = '2px solid red';
+            }
+        }
+
+        // Intentar reconectar cuando la página vuelve a estar visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && (!ws || ws.readyState !== WebSocket.OPEN)) {
+                console.log('Página visible, reconectando...');
+                reconnectAttempts = 0;
+                connectWebSocket();
+            }
+        });
+
+        // Iniciar conexión
+        connectWebSocket();
+    </script>
+</body>
+</html>

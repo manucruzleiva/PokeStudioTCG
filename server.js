@@ -26,14 +26,29 @@ overlayApp.use(express.static(path.join(__dirname, 'obs')));
 dashboardApp.get('/api/cardsearch', async (req, res) => {
   try {
     const query = req.query.q;
-    if (!query) return res.status(400).json({ error: 'Missing query' });    const url = `https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(query)}* OR text:${encodeURIComponent(query)}*`;
+    if (!query) return res.status(400).json({ error: 'Missing query' });
+    
+    console.log('Búsqueda:', query);
+    const url = `https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(query)}* OR text:${encodeURIComponent(query)}*`;
+    console.log('URL:', url);
+    
     const response = await fetch(url, {
       headers: { 'X-Api-Key': POKEMONTCG_API_KEY }
     });
+
+    if (!response.ok) {
+      console.error('Error en Pokemon TCG API:', response.status);
+      const errorText = await response.text();
+      console.error('Detalle:', errorText);
+      return res.status(response.status).json({ error: 'Error accessing Pokemon TCG API' });
+    }
+
     const data = await response.json();
+    console.log('Cartas encontradas:', data.data?.length || 0);
     res.json(data);
   } catch (e) {
-    res.status(500).json({ error: 'Error connecting to pokemontcg.io' });
+    console.error('Error en búsqueda:', e);
+    res.status(500).json({ error: 'Error connecting to pokemontcg.io: ' + e.message });
   }
 });
 
